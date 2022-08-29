@@ -1,8 +1,10 @@
-# NwsOpenapiSdk
+# National Weather Service OpenApi SDK
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/nws_openapi_sdk`. To experiment with that code, run `bin/console` for an interactive prompt.
+The National Weather Service hosts an API with tons of valuable and public data. They also provide an OpenAPI specification for that API at https://api.weather.gov/openapi.json. This Gem provides an extremely simple interface for consuming that API, not though predefined methods, but by reading the OpenAPI specification and meta-programming an http client instance with all the operationIds from the OpenAPI specification becoming `singleton_instance_method`s.
 
-TODO: Delete this and the text above, and describe your gem
+**The major benefit of this approach is that the Gem will automatically stay up to date with the API.**
+
+While this Gem provides an interface for the API, one should still become familiar with the API's abilities. Please see the interactive documentation at https://www.weather.gov/documentation/services-web-api under the 'Specification' tab.
 
 ## Installation
 
@@ -16,13 +18,50 @@ If bundler is not being used to manage dependencies, install the gem by executin
 
 ## Usage
 
-TODO: Write usage instructions here
+Create an instance of the Gem's main module and provide the `user_agent`. This will become a header in the request and is how the API distinguishes you calls from other calls. The `user_agent` value should be a unique ID such as a UUID you have configured as an environment variable.
 
-## Development
+```ruby
+api_client = NwsOpenapiSdk.new(user_agent: ENV['NWS_USER_AGENT'])
+```
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After the instance is created, inspect the public methods available
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```ruby
+api_client.public_methods
+=> [
+ :alerts_active,
+ :alerts_active_count,
+ :alerts_active_zone,
+ :alerts_active_area,
+ :alerts_active_region,
+ :alerts_types,
+ :alerts_single,
+ :glossary,
+ ...
+]
+```
+
+All of the API's operationIds have been programmed on the instance as singleton methods. Call any of them to learn about the arguments needed.
+
+```ruby
+api_client.alerts_active_region
+=>
+  api_client.alerts_active_region
+  nws_openapi_sdk/lib/nws_openapi_sdk/path_parser.rb:64:in `fetch': key not found: :region (KeyError)
+```
+
+Try the call again but provide the required keyword argument. While the instance is smart enough to know what keys it needs for a method, it cannot help with values. Those you'll need to research what the API expects.
+
+```ruby
+api_client.alerts_active_region(region: 'AL')
+=> {"@context"=>["https://geojson.org/geojson-ld/geojson-context.jsonld" ...
+```
+
+You can also infer the keyword arguments by reading the path definition for than operation. If the path was `/foo/{a}/{b},{c}/{x}`, the method call would require 4 keyword args like
+
+```ruby
+api_client.fake_foo_method(a: 'biz', b: 'baz', c: 'zing', x: 'zang')
+```
 
 ## Contributing
 
